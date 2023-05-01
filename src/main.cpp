@@ -1,11 +1,6 @@
 #include <Arduino.h>
 
 
-/* Encoder Library - TwoKnobs Example
- * http://www.pjrc.com/teensy/td_libs_Encoder.html
- *
- * This example code is in the public domain.
- */
 
 // This optional setting causes Encoder to use more optimized code,
 // It must be defined before Encoder.h is included.
@@ -13,14 +8,7 @@
 
 #include <Encoder.h>
 
-// Change these pin numbers to the pins connected to your encoder.
-//   Best Performance: both pins have interrupt capability
-//   Good Performance: only the first pin has interrupt capability
-//   Low Performance:  neither pin has interrupt capability
-
-//Encoder knobLeft(5, 6);
-//Encoder knobRight(7, 8);
-Encoder knob(1, 2 );
+Encoder knob(1, 2);
 
 volatile int oldPosition;
 volatile int newPosition;
@@ -32,7 +20,6 @@ volatile int position3;
 
 volatile int mode;
 
-//   avoid using pins with LEDs attached
 
 void displayMode() {
    Serial.print("Mode: ");
@@ -63,6 +50,16 @@ void displayPosition() {
    Serial.println(position3);
 }
 
+int knobRange(int position) {
+   if (position < 1) {
+      position = 0;
+   }
+   else if (position > 999) {
+      position = 1000;
+   }
+   return position;
+}
+
 void rotate() {
    int knobValue = knob.read();
    //newPosition = (knobValue / 4);
@@ -70,48 +67,22 @@ void rotate() {
    int diff = newPosition - oldPosition;
    if (diff != 0) {
       if (mode == 0) {
-         position0 = position0 + diff;
-         if (position0 < 1) {
-            position0 = 0;
-         }
-         else if (position0 > 999) {
-            position0 = 1000;
-         }
+         position0 = knobRange(position0 + diff);
       }
       else if (mode == 1) {
-         position1 = position1 + diff;
-         if (position1 < 1) {
-            position1 = 0;
-         }
-         else if (position1 > 999) {
-            position1 = 1000;
-         }
+         position1 = knobRange(position1 + diff);
       }
       else if (mode == 2) {
-         position2 = position2 + diff;
-         if (position2 < 1) {
-            position2 = 0;
-         }
-         else if (position2 > 999) {
-            position2 = 1000;
-         }
+         position2 = knobRange(position2 + diff);
       }
       else if (mode == 3) {
-         position3 = position3 + diff;
-         if (position3 < 1) {
-            position3 = 0;
-         }
-         else if (position3 > 999) {
-            position3 = 1000;
-         }
+         position3 = knobRange(position3 + diff);
       }
       else {
       }
       oldPosition = newPosition;
       displayPosition();
    }
-   
-   
 }
 
 void modeChange() {
