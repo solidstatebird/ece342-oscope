@@ -3,7 +3,8 @@
 #include <ADC.h>
 #include <AnalogBufferDMA.h>
 
-const float user_scale = 1.0;
+const float user_scale_1 = 1.0;
+const float user_scale_2 = 0.5;
 
 time_t timer = 0;
 time_t timer_end = 0;
@@ -119,8 +120,8 @@ void processBuffers(int16_t *out1, int16_t *out2)
 
     for (uint16_t i = 0; i < buffer_size; i++)
     {
-        out1[i] = ((int)in0[i] - 2047) * ((3.3 * 1000) / 4096) * user_scale;
-        out2[i] = ((int)in1[i] - 2047) * ((3.3 * 1000) / 4096) * user_scale;
+        out1[i] = ((int)in0[i] - 2047) * ((3.3 * 1000) / 4096) * user_scale_1;
+        out2[i] = ((int)in1[i] - 2047) * ((3.3 * 1000) / 4096) * user_scale_2;
     }
 
     adc0_abdma.clearInterrupt();
