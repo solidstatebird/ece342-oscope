@@ -10,6 +10,8 @@
 
 Encoder knob(1, 2);
 
+
+// The following variables are volatile so they may be accessed in all functions
 volatile int oldPosition;
 volatile int newPosition;
 
@@ -20,7 +22,8 @@ volatile int position3;
 
 volatile int mode;
 
-
+// Display mode on serial monitor when switched
+// For block 1 checkoff
 void displayMode() {
    Serial.print("Mode: ");
    if (mode == 0) {
@@ -38,6 +41,7 @@ void displayMode() {
    else {}
    Serial.println();
 }
+
 
 void displayPosition() {
    Serial.print("horz: ");
@@ -62,8 +66,8 @@ int knobRange(int position) {
 
 void rotate() {
    int knobValue = knob.read();
-   //newPosition = (knobValue / 4);
-   newPosition = knobValue;
+   newPosition = (knobValue / 4);
+   //newPosition = knobValue;
    int diff = newPosition - oldPosition;
    if (diff != 0) {
       if (mode == 0) {
@@ -105,7 +109,7 @@ void setup() {
    pinMode(1, INPUT_PULLUP);
    pinMode(2, INPUT_PULLUP);
    
-   attachInterrupt(digitalPinToInterrupt(2), rotate, FALLING);
+   attachInterrupt(digitalPinToInterrupt(2), rotate, CHANGE);
 
    attachInterrupt(digitalPinToInterrupt(0), modeChange, FALLING);
 
