@@ -9,8 +9,10 @@
 #define TFT_CS 10
 
 volatile uint16_t trigger = 40000;
-volatile uint16_t hscale = 99;
+volatile uint16_t hscale = 97;
 volatile uint16_t testarray[32000];
+volatile uint16_t frequency;
+//volatile uint16_t vscale1 = 10;
 
 ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
 
@@ -18,8 +20,8 @@ void sinewave(long freq) {
   //uint16_t testarray[32000];
   long sineval;
   for (int i = 0; i < 32000; i++) {
-    // sine wave for given freq with amplitude 1/8th max input voltage (max input amplitude = 32767), shifted half way up of max uint16 value (65535)
-    sineval = (16384 * sin(((freq * i) / 1500000.0) * 2.0 * PI));
+    // sine wave for given freq  (max input amplitude = 32767), shifted half way up of max uint16 value (65535)
+    sineval = (16000 * sin(((freq * i) / 1500000.0) * 2.0 * PI));
     testarray[i] = (sineval + 32767.5); 
   }
   //return testarray;
@@ -27,7 +29,7 @@ void sinewave(long freq) {
 
 int triggerStart(int trig) {
   int i = 0;
-  while (testarray[i] < trig) {
+  while (testarray[i] < trig && i < 32000) {
     i++;
   }
   return i;
@@ -35,25 +37,31 @@ int triggerStart(int trig) {
 
 void drawWave() {
   //uint16_t testarray[] = sinewave(1000);
-  tft.fillScreen(ILI9341_BLACK);
+  //tft.fillScreen(ILI9341_BLACK);
 
   int y1, y2;
   int j = 1;
   int start = triggerStart(trigger);
-  y1 = (240 * (testarray[start] / 65535.0));
+  //y1 = (240 * (testarray[start] / 65535.0));
+  y1 = (211 - (206.0 * (testarray[start] / 65535.0)));
+  //Serial.println(start);
 
-  tft.setCursor(0, 0);
-  tft.setTextColor(ILI9341_WHITE);  
-  tft.setFont(Arial_14);
-  tft.println("Oscilloscope!");
-  tft.setFont(Arial_10);
-  tft.println("Look at that sexy sine wave");
-
-  if (hscale < 99) {
+  //tft.setCursor(0, 0);
+  //tft.setTextColor(ILI9341_WHITE);  
+  //tft.setFont(Arial_14);
+  //tft.println("Oscilloscope!");
+  //tft.setFont(Arial_10);
+  //tft.println("Look at that sexy sine wave");
+  if (start > 30000) {
+    
+    return;
+  }
+  else if (hscale < 99) {
     //y1 = (240 * (testarray[start] / 65535.0));
-    for (int i = 0; i < 320; i+=2) {
+    for (int i = 10; i < 313; i+=2) {
       //y1 = (240 * (testarray[start + (i * (100-hscale))] / 65535.0));
-      y2 = (240 * (testarray[start + (j * (100 - hscale))] / 65535.0));
+      //y2 = (240 * (testarray[start + (j * (100 - hscale))] / 65535.0));
+      y2 = (211 - (206.0 * (testarray[start + (j * (100 - hscale))] / 65535.0)));
       //y2 = ((120 * sin(i))+120);
       tft.drawLine(i, y1, (i+2), y2, ILI9341_WHITE);
       y1 = y2;
@@ -62,16 +70,16 @@ void drawWave() {
   }
   else {
     //y1 = (240 * (testarray[start] / 65535.0));
-    for (int i = 0; i < 320; i+=(hscale - 97)) {
+    for (int i = 10; i < 313; i+=(hscale - 97)) {
       //y1 = (240 * (testarray[start + j] / 65535.0));
-      y2 = (240 * (testarray[start + j] / 65535.0));
+      //y2 = (240 * (testarray[start + j] / 65535.0));
+      y2 = (211 - (206.0 * (testarray[start + j] / 65535.0)));
       //y2 = ((120 * sin(i))+120);
       tft.drawLine(i, y1, (i + (hscale - 98)), y2, ILI9341_WHITE);
       y1 = y2;
       j++;
     }
   }
-  delay(1000);
 }
 
 void testFill() {
@@ -87,7 +95,8 @@ void setup() {
   tft.fillScreen(ILI9341_BLACK);
   //tft.setTextColor(ILI9341_WHITE);
   //tft.setTextSize(2);
-  sinewave(10000);
+  frequency = 10000;
+  sinewave(frequency);
   
   tft.println("Waiting for Arduino Serial Monitor...");
 
@@ -100,28 +109,54 @@ void setup() {
   for (int i = 0; i < 2000; i++) {
     Serial.println(testarray[i]);
   }
+  
+}
+
+void drawTrigger() {
+  int trig = (211 - (206 * trigger / 65535.0));
+  tft.fillTriangle(1, (trig + 4), 1, (trig-4), 8, trig, ILI9341_WHITE);
+}
+
+void updateScreen() {
+  tft.fillScreen(ILI9341_BLACK);
+  tft.drawRect(10, 4, 305, 212, ILI9341_WHITE);
+  tft.drawLine(10, 108, 313, 108, ILI9341_WHITE);
+  drawWave();
+  drawTrigger();
+  tft.setCursor(10, 220);
+  tft.setTextColor(ILI9341_WHITE);  
+  tft.setFont(Arial_12);
+  tft.println("Control: Horizontal Scale");
+  //tft.setFont(Arial_10);
+  //tft.println("Look at that sexy sine wave");
+  delay(4);
 
 }
 
 void loop() {
-  hscale = 94;
-  drawWave();
-  hscale = 95;
-  drawWave();
-  hscale = 96;
-  drawWave();
-  hscale = 97;
-  drawWave();
-  hscale = 98;
-  drawWave();
-  hscale = 99;
-  drawWave();
-  hscale = 100;
-  drawWave();
-  hscale = 101;
-  drawWave();
-  hscale = 102;
- 
+  while(hscale < 102) { 
+    while(trigger < 44000) {
+      updateScreen();
+      trigger+=800;
+    }
+    while(trigger > 36000) {
+      updateScreen();
+      trigger-=800;
+    }
+    hscale++;
+  }
+  while(hscale > 93) {
+    while(trigger < 44000) {
+      updateScreen();
+      trigger+=800;
+    }
+    while(trigger > 36000) {
+      updateScreen();
+      trigger-=800;
+    }
+    hscale--;
+  }
+  
 }
 
 
