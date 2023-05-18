@@ -1,36 +1,43 @@
-
 #include <Arduino.h>
-#include <display.h>
+#include "display.h"
+#include "sampler.h"
 
-uint16_t a[32000];
-uint16_t b[32000];
+const float user_scale_1 = 1.0;
+const float user_scale_2 = 1.0;
 
+const int channel_1_pin = A4;
+const int channel_2_pin = A5;
+
+int16_t channel_1_data[BUFFER_SIZE];
+int16_t channel_2_data[BUFFER_SIZE];
+uint16_t screen_channel_1_data[BUFFER_SIZE];
+uint16_t screen_channel_2_data[BUFFER_SIZE];
 
 ILI9341_t3n tft = ILI9341_t3n(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCK, TFT_MISO);
 Display *display;
 
-void setup() {
-    delay(2000);
-    Serial.println("enter setup");
-    display = new Display(a, b, &tft);
-   long sineval;
-  
-  for (int i = 0; i < 32000; i++) {
-    // sine wave for given freq  (max input amplitude = 32767), shifted half way up of max uint16 value (65535)
-    sineval = (10000.0 * sin(((10000 * i) / 1300000.0) * 2.0 * PI));
-    a[i] = (sineval + 32767); 
-    b[i] = (-0.5* sineval + 32767);
-  }
+void setup()
+{
+    while (!Serial && millis() < 5000)
+        ; // Wait 5 seconds for serial connection
+    display = new Display(screen_channel_1_data, screen_channel_2_data, &tft);
+
+    setupADC(channel_1_pin, channel_2_pin);
 }
 
-void loop() {
-    //display->update();
-    while (display->trigger < 40) {
-    display->trigger++;
-    display->update();
-  }
-  while (display->trigger > 2) {
-    display->trigger--;
-    display->update();
-  }
+void loop()
+{
+
+    if (DMA_completed())
+    {
+        processBuffers(channel_1_data, channel_2_data, user_scale_1, user_scale_2);
+        
+        //temporary: convert from mV to full 16 bit range (6V = )
+        for(int i = 0; i < BUFFER_SIZE; i++) {
+            screen_channel_1_data[i] = channel_1_data[i] * 5.46133333333 + 32767.0;
+            screen_channel_2_data[i] = channel_2_data[i] * 5.46133333333 + 32767.0;
+        }
+
+        display->update();
+    }
 }
