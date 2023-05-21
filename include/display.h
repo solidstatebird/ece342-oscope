@@ -20,10 +20,18 @@ class Display {
     Display(uint16_t *, uint16_t *, ILI9341_t3n *);
     void update();
 
-    uint16_t trigger = 2;         // trigger: 1 - 50
+    
+    uint16_t mode = 5;             // mode: 1 - 6
+    uint16_t vscale1 = 3;          // Mode 1: 1 - 20
+    uint16_t vscale2 = 4;          // Mode 2: 1 - 20
+    uint16_t hscale = 97;          // Mode 3: 1 - 150
+    uint16_t runStop = 0;          // Mode 4: 0 - 1
+    uint16_t triggerChannel = 0;   // Mode 5: 0 - 1
+    uint16_t trigger = 10;          // Mode 6: 1 - 50
 
     private:
 
+    int newTrigger();
     int midTrigger();
     int vertBoundCheck(int vertin);
     void drawIn(int, int, uint16_t);
@@ -38,12 +46,7 @@ class Display {
 
     uint16_t *data[2];
 
-    uint16_t mode = 5;             // mode: 1 - 5
-    uint16_t hscale = 97;          // hscale: 1 - 150
-    uint16_t runStop = 0;          // runStop: 0 - 1
-
-    uint16_t vscale1 = 3;          // vscale1: 1 - 20
-    uint16_t vscale2 = 4;          // vscale2: 1 - 20
+    uint16_t trigPoint = 0;
     uint16_t trigPoint1 = 0;
     uint16_t trigPoint2 = 0;
 

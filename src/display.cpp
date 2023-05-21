@@ -13,6 +13,46 @@ Display::Display(uint16_t *data1, uint16_t *data2, ILI9341_t3n *screen)
     tft->setRotation(1);
 }
 
+int Display::newTrigger() 
+{
+    int scaling, start;
+    int trig = ((trigger / 50.0) * 32767.0) + 32767;
+
+    if (triggerChannel == 0) 
+    {
+        scaling = vscale1;
+    }
+    else 
+    {
+        scaling = vscale2;
+    }
+
+    if (hscale < 99)
+    {
+        start = ((100 - hscale) * 151);
+        trigPoint = start;
+    }
+    else
+    {
+        start = 76;
+        trigPoint = start;
+    }
+
+    while ((((data[triggerChannel][trigPoint] - 32767.0) * scaling) + 32767.0) < trig && trigPoint < 31000)
+    {
+        trigPoint++;
+    }
+
+    if (trigPoint < 30000) 
+    {
+        return trigPoint;
+    }
+    else 
+    {
+        return start;
+    }
+}
+
 int Display::midTrigger()
 {
     int trig = ((trigger / 50.0) * 32767.0) + 32767;
@@ -70,21 +110,26 @@ int Display::vertBoundCheck(int vertin)
 
 void Display::drawIn(int wave, int start, uint16_t color)
 {
-    int y1, y2;
+    int y1, y2, scaling;
     int j = -76;
 
-    if (start > 30000 || trigPoint1 > 30000)
+    if (wave == 0) 
     {
-        return;
+        scaling = vscale1;
     }
-    else if (hscale < 99)
+    else 
     {
-        y1 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * vscale1) / 32767.0)));
+        scaling = vscale2;
+    }
+
+    if (hscale < 99)
+    {
+        y1 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
         y1 = vertBoundCheck(y1);
         j++;
         for (int i = 11; i < 312; i += 2)
         {
-            y2 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * vscale1) / 32767.0)));
+            y2 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
             y2 = vertBoundCheck(y2);
 
             tft->drawLine(i, y1, (i + 2), y2, color);
@@ -96,12 +141,12 @@ void Display::drawIn(int wave, int start, uint16_t color)
     else
     {
         j = (-151 / (hscale - 97));
-        y1 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * vscale1) / 32767.0)));
+        y1 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * scaling) / 32767.0)));
         y1 = vertBoundCheck(y1);
         j++;
         for (int i = 11; i < (411 - hscale); i += (hscale - 97))
         {
-            y2 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * vscale1) / 32767.0)));
+            y2 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * scaling) / 32767.0)));
             y2 = vertBoundCheck(y2);
 
             tft->drawLine(i, y1, (i + (hscale - 97)), y2, color);
@@ -116,7 +161,7 @@ void Display::drawTrigger()
 {
     int trig = ((trigger / 50.0) * 32767.0) + 32767;
     int trigPointer = (211 - (206 * trig / 65535.0));
-    if (mode == 5)
+    if (mode == 6)
     {
         tft->fillTriangle(2, (trigPointer + 6), 2, (trigPointer - 6), 8, trigPointer, ILI9341_WHITE);
     }
@@ -286,11 +331,12 @@ void Display::displayMode()
 
 void Display::update()
 {
-    int start = midTrigger();
+    //int start = midTrigger();
+    int start = newTrigger();
     tft->fillScreen(ILI9341_BLACK);
     drawGrid();
-    drawIn(0, start, CL(255, 255, 0));
-    drawIn(1, start, CL(0, 255, 255));
+    drawIn(0, start, CL(224, 204, 27));
+    drawIn(1, start, CL(52, 214, 201));
     drawTrigger();
     displayData();
     displayMode();
