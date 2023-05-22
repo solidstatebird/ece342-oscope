@@ -21,10 +21,10 @@ class Display {
     void update();
 
     
-    uint16_t mode = 5;             // mode: 1 - 6
-    uint16_t vscale1 = 4;          // Mode 1: 1 - 20
-    uint16_t vscale2 = 4;          // Mode 2: 1 - 20
-    uint16_t hscale = 380;          // Mode 3: 1 - 150
+    uint16_t mode = 1;             // mode: 1 - 6
+    uint16_t vscale1 = 1;          // Mode 1: 1 - 20
+    uint16_t vscale2 = 1;          // Mode 2: 1 - 20
+    uint16_t hscale = 75;          // Mode 3: 1 - 150
     uint16_t runStop = 0;          // Mode 4: 0 - 1
     uint16_t triggerChannel = 0;   // Mode 5: 0 - 1
     uint16_t trigger = 10;          // Mode 6: 1 - 50

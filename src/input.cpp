@@ -17,7 +17,7 @@ void KnobIn::rotate(Display * display, Encoder knob)
 {
     //newPosition = knob.read();
     //int diff = abs(newPosition - oldPosition) / 4;
-    /*
+    
     newPosition = knob.read() / 4;
     int diff = abs(newPosition - oldPosition);
     
@@ -25,33 +25,35 @@ void KnobIn::rotate(Display * display, Encoder knob)
     {
         diff = -1 * diff;
     }
-    */
+    
+    /*
     newPosition = knob.read();
     int diff = newPosition - oldPosition;
+    */
     if (diff != 0) {
         if (display->mode == 1) 
         {
-            display->vscale1 = knobRange(display->vscale1 + diff, 4, 80);
+            display->vscale1 = knobRange(display->vscale1 + diff, 1, 20);
         }
         else if (display->mode == 2) 
         {
-            display->vscale2 = knobRange(display->vscale2 + diff, 4, 80);
+            display->vscale2 = knobRange(display->vscale2 + diff, 1, 20);
         }
         else if (display->mode == 3) 
         {
-            display->hscale = knobRange(display->hscale + diff, 4, 600);
+            display->hscale = knobRange(display->hscale + diff, 1, 150);
         }
         else if (display->mode == 4) 
         {
-            display->runStop = knobRange(display->runStop + diff, 0, 4);
+            display->runStop = knobRange(display->runStop + diff, 0, 1);
         }
         else if (display->mode == 5) 
         {
-            display->triggerChannel = knobRange(display->triggerChannel + diff, 0, 4);
+            display->triggerChannel = knobRange(display->triggerChannel + diff, 0, 1);
         }
         else if (display->mode == 6) 
         {
-            display->trigger = knobRange(display->trigger + diff, 4, 200);
+            display->trigger = knobRange(display->trigger + diff, 1, 50);
         }
         oldPosition = newPosition;
     }
@@ -67,6 +69,6 @@ void KnobIn::modeChange(Display * display)
     {
         display->mode++;
     }
-    delayMicroseconds(50);
+    delayMicroseconds(20);
 }
 

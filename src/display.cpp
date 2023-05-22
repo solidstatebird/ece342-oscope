@@ -16,20 +16,20 @@ Display::Display(uint16_t *data1, uint16_t *data2, ILI9341_t3n *screen)
 int Display::newTrigger() 
 {
     int scaling, start, prevPoint;
-    int trig = (((trigger / 4) / 50.0) * 32767.0) + 32767;
+    int trig = ((trigger / 50.0) * 32767.0) + 32767;
 
-    if ((triggerChannel / 4) == 0) 
+    if (triggerChannel == 0) 
     {
-        scaling = vscale1 / 4;
+        scaling = vscale1;
     }
     else 
     {
-        scaling = vscale2 / 4;
+        scaling = vscale2;
     }
 
-    if ((hscale / 4) < 99)
+    if (hscale < 99)
     {
-        start = ((100 - (hscale / 4)) * 151);
+        start = ((100 - hscale) * 151);
         trigPoint = start;
     }
     else
@@ -45,8 +45,8 @@ int Display::newTrigger()
         prevPoint++;
     }
     */
-     while (!(((((data[(triggerChannel / 4)][trigPoint] - 32767.0) * scaling) + 32767.0) > trig) && 
-            ((((data[(triggerChannel / 4)][prevPoint] - 32767.0) * scaling) + 32767.0) < trig))
+     while (!(((((data[triggerChannel][trigPoint] - 32767.0) * scaling) + 32767.0) > trig) && 
+            ((((data[triggerChannel][prevPoint] - 32767.0) * scaling) + 32767.0) < trig))
             && !(trigPoint > 31000))
     {
         trigPoint++;
@@ -125,21 +125,21 @@ void Display::drawIn(int wave, int start, uint16_t color)
 
     if (wave == 0) 
     {
-        scaling = vscale1 / 4;
+        scaling = vscale1;
     }
     else 
     {
-        scaling = vscale2 / 4;
+        scaling = vscale2;
     }
 
-    if ((hscale / 4) < 99)
+    if (hscale < 99)
     {
-        y1 = (108 - (104.0 * (((data[wave][start + (j * (100 - (hscale / 4)))] - 32767.0) * scaling) / 32767.0)));
+        y1 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
         y1 = vertBoundCheck(y1);
         j++;
         for (int i = 11; i < 312; i += 2)
         {
-            y2 = (108 - (104.0 * (((data[wave][start + (j * (100 - (hscale / 4)))] - 32767.0) * scaling) / 32767.0)));
+            y2 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
             y2 = vertBoundCheck(y2);
 
             tft->drawLine(i, y1, (i + 2), y2, color);
@@ -150,16 +150,16 @@ void Display::drawIn(int wave, int start, uint16_t color)
     }
     else
     {
-        j = (-151 / ((hscale / 4) - 97));
+        j = (-151 / (hscale - 97));
         y1 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * scaling) / 32767.0)));
         y1 = vertBoundCheck(y1);
         j++;
-        for (int i = 11; i < (411 - (hscale / 4)); i += ((hscale / 4) - 97))
+        for (int i = 11; i < (411 - hscale); i += (hscale - 97))
         {
             y2 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * scaling) / 32767.0)));
             y2 = vertBoundCheck(y2);
 
-            tft->drawLine(i, y1, (i + ((hscale / 4) - 97)), y2, color);
+            tft->drawLine(i, y1, (i + (hscale - 97)), y2, color);
 
             y1 = y2;
             j++;
@@ -169,7 +169,7 @@ void Display::drawIn(int wave, int start, uint16_t color)
 
 void Display::drawTrigger()
 {
-    int trig = (((trigger / 4) / 50.0) * 32767.0) + 32767;
+    int trig = ((trigger / 50.0) * 32767.0) + 32767;
     int trigPointer = (211 - (206 * trig / 65535.0));
     if (mode == 6)
     {
@@ -210,13 +210,13 @@ void Display::drawGrid()
 double Display::calculateHscale()
 {
     double hdiv;
-    if ((hscale / 4) < 99)
+    if (hscale < 99)
     {
-        hdiv = (((100.0 - (hscale / 4)) / sampleRate) * 19.0);
+        hdiv = (((100.0 - hscale) / sampleRate) * 19.0);
     }
     else
     {
-        hdiv = ((1.0 / sampleRate) * (((hscale / 4) - 97) / 19.0));
+        hdiv = ((1.0 / sampleRate) * ((hscale - 97) / 19.0));
     }
     return hdiv;
 }
@@ -257,7 +257,7 @@ void Display::displayHscale(double hdiv)
 void Display::displayRunStop()
 {
     tft->setFont(Arial_8);
-    if ((runStop / 4) == 0)
+    if (runStop == 0)
     {
         tft->fillRoundRect(288, 216, 27, 10, 2, ILI9341_WHITE);
         tft->setCursor(292, 217);
@@ -286,7 +286,7 @@ void Display::displayTrigChannel()
     tft->setTextColor(ILI9341_WHITE);
     tft->print("Trig:");
 
-    if ((triggerChannel / 4) == 0)
+    if (triggerChannel == 0)
     {
         tft->fillRoundRect(6, 227, 23, 10, 2, CL(224, 204, 27));
         tft->setCursor(9, 228);
@@ -304,8 +304,8 @@ void Display::displayTrigChannel()
 
 void Display::displayData()
 {
-    float div1 = 1.5 / (vscale1 / 4);
-    float div2 = 1.5 / (vscale2 / 4);
+    float div1 = 1.5 / vscale1;
+    float div2 = 1.5 / vscale2;
     double hdiv = calculateHscale();
     tft->setFont(Arial_9);
 
