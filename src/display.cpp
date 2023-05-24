@@ -212,11 +212,11 @@ double Display::calculateHscale()
     double hdiv;
     if (hscale < 99)
     {
-        hdiv = (((100.0 - hscale) / sampleRate) * 19.0);
+        hdiv = (((100.0 - hscale) / SAMPLE_RATE) * 19.0);
     }
     else
     {
-        hdiv = ((1.0 / sampleRate) * ((hscale - 97) / 19.0));
+        hdiv = ((1.0 / SAMPLE_RATE) * ((hscale - 97) / 19.0));
     }
     return hdiv;
 }

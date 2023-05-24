@@ -48,7 +48,7 @@ private:
     uint16_t trigPoint1 = 0;
     uint16_t trigPoint2 = 0;
 
-    const float sampleRate = 1300000.0;
+    const float SAMPLE_RATE = 1176470.58824;
 
     ILI9341_t3n *tft;
 };
