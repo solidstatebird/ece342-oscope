@@ -61,13 +61,16 @@ void loop()
 {
     if (DMA_completed())
     {
-        processBuffers(channel_1_data, channel_2_data);
-
-        // temporary: convert from mV to full 16 bit range (6V = )
-        for (int i = 0; i < BUFFER_SIZE; i++)
+        if(!display->runStop)
         {
-            screen_channel_1_data[i] = channel_1_data[i] * 5.46133333333 + 32767.0;
-            screen_channel_2_data[i] = channel_2_data[i] * 5.46133333333 + 32767.0;
+            processBuffers(channel_1_data, channel_2_data);
+
+            // temporary: convert from mV to full 16 bit range (6V = )
+            for (int i = 0; i < BUFFER_SIZE; i++)
+            {
+                screen_channel_1_data[i] = channel_1_data[i] * 5.46133333333 + 32767.0;
+                screen_channel_2_data[i] = channel_2_data[i] * 5.46133333333 + 32767.0;
+            }
         }
 
         display->update();
