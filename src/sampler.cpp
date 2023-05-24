@@ -44,7 +44,7 @@ void setupADC(uint8_t pin1, uint8_t pin2)
     adc->startSynchronizedContinuous(pin1, pin2);
 }
 
-void processBuffers(int16_t *out1, int16_t *out2, float scale1, float scale2)
+void processBuffers(int16_t *out1, int16_t *out2)
 {
     volatile uint16_t *in0 = adc0_abdma.bufferLastISRFilled();
     volatile uint16_t *in1 = adc1_abdma.bufferLastISRFilled();
@@ -59,8 +59,8 @@ void processBuffers(int16_t *out1, int16_t *out2, float scale1, float scale2)
     //convert raw data to millivolts
     for (uint16_t i = 0; i < BUFFER_SIZE; i++)
     {
-        out1[i] = ((int)in0[i] - 2047) * ((3.3 * 1000) / 4096) * scale1;
-        out2[i] = ((int)in1[i] - 2047) * ((3.3 * 1000) / 4096) * scale2;
+        out1[i] = ((int)in0[i] - 2047) * ((3.3 * 1000) / 4096);
+        out2[i] = ((int)in1[i] - 2047) * ((3.3 * 1000) / 4096);
     }
 
     adc0_abdma.clearInterrupt();

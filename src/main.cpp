@@ -4,9 +4,6 @@
 #include "sampler.h"
 #include "input.h"
 
-const float user_scale_1 = 1.0;
-const float user_scale_2 = 1.0;
-
 const int channel_1_pin = A4;
 const int channel_2_pin = A5;
 
@@ -64,7 +61,7 @@ void loop()
 {
     if (DMA_completed())
     {
-        processBuffers(channel_1_data, channel_2_data, user_scale_1, user_scale_2);
+        processBuffers(channel_1_data, channel_2_data);
 
         // temporary: convert from mV to full 16 bit range (6V = )
         for (int i = 0; i < BUFFER_SIZE; i++)

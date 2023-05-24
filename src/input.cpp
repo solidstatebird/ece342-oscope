@@ -45,11 +45,11 @@ void KnobIn::rotate(Display *display, Encoder knob)
         }
         else if (display->mode == 5)
         {
-            display->triggerChannel = knobRange(display->triggerChannel + diff, 0, 1);
+            display->trigger = knobRange(display->trigger + diff, 1, 50);
         }
         else if (display->mode == 6)
         {
-            display->trigger = knobRange(display->trigger + diff, 1, 50);
+            display->triggerChannel = knobRange(display->triggerChannel + diff, 0, 1);
         }
         oldPosition = newPosition;
     }

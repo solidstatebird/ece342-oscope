@@ -171,7 +171,7 @@ void Display::drawTrigger()
 {
     int trig = ((trigger / 50.0) * 32767.0) + 32767;
     int trigPointer = (211 - (206 * trig / 65535.0));
-    if (mode == 6)
+    if (mode == 5)
     {
         tft->fillTriangle(2, (trigPointer + 6), 2, (trigPointer - 6), 8, trigPointer, ILI9341_WHITE);
     }
@@ -362,7 +362,7 @@ void Display::displayMode()
     {
         tft->drawRoundRect(286, 214, 31, 25, 2, ILI9341_WHITE);
     }
-    else if (mode == 5)
+    else if (mode == 6)
     {
         tft->drawRoundRect(4, 214, 27, 25, 2, ILI9341_WHITE);
     }
