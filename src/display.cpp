@@ -13,16 +13,16 @@ Display::Display(uint16_t *data1, uint16_t *data2, ILI9341_t3n *screen)
     tft->setRotation(1);
 }
 
-int Display::newTrigger() 
+int Display::newTrigger()
 {
-    int scaling, start;
+    int scaling, start, prevPoint;
     int trig = ((trigger / 50.0) * 32767.0) + 32767;
 
-    if (triggerChannel == 0) 
+    if (triggerChannel == 0)
     {
         scaling = vscale1;
     }
-    else 
+    else
     {
         scaling = vscale2;
     }
@@ -37,17 +37,27 @@ int Display::newTrigger()
         start = 76;
         trigPoint = start;
     }
-
+    prevPoint = trigPoint - 1;
+    /*
     while ((((data[triggerChannel][trigPoint] - 32767.0) * scaling) + 32767.0) < trig && trigPoint < 31000)
     {
         trigPoint++;
+        prevPoint++;
+    }
+    */
+    while (!(((((data[triggerChannel][trigPoint] - 32767.0) * scaling) + 32767.0) > trig) &&
+             ((((data[triggerChannel][prevPoint] - 32767.0) * scaling) + 32767.0) < trig)) &&
+           !(trigPoint > 31000))
+    {
+        trigPoint++;
+        prevPoint++;
     }
 
-    if (trigPoint < 30000) 
+    if (trigPoint < 30000)
     {
         return trigPoint;
     }
-    else 
+    else
     {
         return start;
     }
@@ -113,11 +123,11 @@ void Display::drawIn(int wave, int start, uint16_t color)
     int y1, y2, scaling;
     int j = -76;
 
-    if (wave == 0) 
+    if (wave == 0)
     {
         scaling = vscale1;
     }
-    else 
+    else
     {
         scaling = vscale2;
     }
@@ -213,7 +223,8 @@ double Display::calculateHscale()
 
 void Display::displayHscale(double hdiv)
 {
-    tft->setCursor(188, 222);
+    tft->setFont(Arial_9);
+    tft->setCursor(199, 222);
     tft->setTextColor(ILI9341_WHITE);
     tft->print("Time: ");
     if (hdiv >= 1)
@@ -248,23 +259,46 @@ void Display::displayRunStop()
     tft->setFont(Arial_8);
     if (runStop == 0)
     {
-        tft->fillRoundRect(284, 216, 27, 10, 2, ILI9341_WHITE);
-        tft->setCursor(288, 217);
+        tft->fillRoundRect(288, 216, 27, 10, 2, ILI9341_WHITE);
+        tft->setCursor(292, 217);
         tft->setTextColor(ILI9341_BLACK);
         tft->print("Run");
-        tft->setCursor(287, 228);
+        tft->setCursor(291, 228);
         tft->setTextColor(ILI9341_WHITE);
         tft->print("Stop");
     }
     else
     {
-        tft->setCursor(288, 217);
+        tft->setCursor(292, 217);
         tft->setTextColor(ILI9341_WHITE);
         tft->print("Run");
-        tft->fillRoundRect(284, 227, 27, 10, 2, ILI9341_WHITE);
-        tft->setCursor(287, 228);
+        tft->fillRoundRect(288, 227, 27, 10, 2, ILI9341_WHITE);
+        tft->setCursor(291, 228);
         tft->setTextColor(ILI9341_BLACK);
         tft->print("Stop");
+    }
+}
+
+void Display::displayTrigChannel()
+{
+    tft->setFont(Arial_8);
+    tft->setCursor(8, 217);
+    tft->setTextColor(ILI9341_WHITE);
+    tft->print("Trig:");
+
+    if (triggerChannel == 0)
+    {
+        tft->fillRoundRect(6, 227, 23, 10, 2, CL(224, 204, 27));
+        tft->setCursor(9, 228);
+        tft->setTextColor(ILI9341_BLACK);
+        tft->print("CH1");
+    }
+    else
+    {
+        tft->fillRoundRect(6, 227, 23, 10, 2, CL(52, 214, 201));
+        tft->setCursor(8, 228);
+        tft->setTextColor(ILI9341_BLACK);
+        tft->print("CH2");
     }
 }
 
@@ -275,7 +309,7 @@ void Display::displayData()
     double hdiv = calculateHscale();
     tft->setFont(Arial_9);
 
-    tft->setCursor(10, 222);
+    tft->setCursor(33, 222);
     tft->setTextColor(CL(224, 204, 27));
     tft->print("CH1: ");
 
@@ -290,7 +324,7 @@ void Display::displayData()
         tft->print(" mV");
     }
 
-    tft->setCursor(98, 222);
+    tft->setCursor(116, 222);
     tft->setTextColor(CL(52, 214, 201));
     tft->print("CH2: ");
 
@@ -305,6 +339,7 @@ void Display::displayData()
         tft->print(" mV");
     }
 
+    displayTrigChannel();
     displayHscale(hdiv);
     displayRunStop();
 }
@@ -313,25 +348,29 @@ void Display::displayMode()
 {
     if (mode == 1)
     {
-        tft->drawRoundRect(6, 217, 87, 20, 2, ILI9341_WHITE);
+        tft->drawRoundRect(31, 217, 83, 20, 2, ILI9341_WHITE);
     }
     else if (mode == 2)
     {
-        tft->drawRoundRect(94, 217, 87, 20, 2, ILI9341_WHITE);
+        tft->drawRoundRect(114, 217, 83, 20, 2, ILI9341_WHITE);
     }
     else if (mode == 3)
     {
-        tft->drawRoundRect(184, 217, 94, 20, 2, ILI9341_WHITE);
+        tft->drawRoundRect(197, 217, 89, 20, 2, ILI9341_WHITE);
     }
     else if (mode == 4)
     {
-        tft->drawRoundRect(282, 214, 31, 25, 2, ILI9341_WHITE);
+        tft->drawRoundRect(286, 214, 31, 25, 2, ILI9341_WHITE);
+    }
+    else if (mode == 5)
+    {
+        tft->drawRoundRect(4, 214, 27, 25, 2, ILI9341_WHITE);
     }
 }
 
 void Display::update()
 {
-    //int start = midTrigger();
+    // int start = midTrigger();
     int start = newTrigger();
     tft->fillScreen(ILI9341_BLACK);
     drawGrid();

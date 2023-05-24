@@ -4,15 +4,14 @@
 #include "sampler.h"
 #include "input.h"
 
-
 const float user_scale_1 = 1.0;
 const float user_scale_2 = 1.0;
 
 const int channel_1_pin = A4;
 const int channel_2_pin = A5;
 
-const int knob_in_1 = 35;
-const int knob_in_2 = 34;
+const int knob_in_1 = 34;
+const int knob_in_2 = 35;
 const int knob_push = 33;
 
 int16_t channel_1_data[BUFFER_SIZE];
@@ -26,12 +25,19 @@ Display *display;
 Encoder knob(knob_in_1, knob_in_2);
 KnobIn knob_in;
 
-void rotate() 
+int buttonState = 0;
+int lastButtonState = 0;
+
+int currentButtonState = 0;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
+
+void rotate()
 {
     knob_in.rotate(display, knob);
 }
 
-void modeChange() 
+void modeChange()
 {
     knob_in.modeChange(display);
 }
@@ -47,8 +53,8 @@ void setup()
     pinMode(knob_in_1, INPUT_PULLUP);
     pinMode(knob_in_2, INPUT_PULLUP);
     pinMode(knob_push, INPUT_PULLUP);
+    // attachInterrupt(digitalPinToInterrupt(knob_push), modeChange, FALLING);
     attachInterrupt(digitalPinToInterrupt(knob_in_2), rotate, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(knob_push), modeChange, FALLING);
 
     knob_in.oldPosition = knob.read();
     knob_in.newPosition = knob_in.oldPosition;
@@ -56,17 +62,37 @@ void setup()
 
 void loop()
 {
-
     if (DMA_completed())
     {
         processBuffers(channel_1_data, channel_2_data, user_scale_1, user_scale_2);
-        
-        //temporary: convert from mV to full 16 bit range (6V = )
-        for(int i = 0; i < BUFFER_SIZE; i++) {
+
+        // temporary: convert from mV to full 16 bit range (6V = )
+        for (int i = 0; i < BUFFER_SIZE; i++)
+        {
             screen_channel_1_data[i] = channel_1_data[i] * 5.46133333333 + 32767.0;
             screen_channel_2_data[i] = channel_2_data[i] * 5.46133333333 + 32767.0;
         }
 
         display->update();
     }
+
+    currentButtonState = digitalRead(knob_push);
+
+    if (currentButtonState != lastButtonState)
+    {
+        lastDebounceTime = millis();
+    }
+
+    if ((millis() - lastDebounceTime) > debounceDelay)
+    {
+        if (currentButtonState != buttonState)
+        {
+            buttonState = currentButtonState;
+            if (buttonState == LOW)
+            {
+                modeChange();
+            }
+        }
+    }
+    lastButtonState = currentButtonState;
 }
