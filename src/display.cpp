@@ -1,4 +1,10 @@
 #include <display.h>
+#include <sampler.h>
+
+#include <fonts/font_CourierNewBold.h>
+#include <fonts/font_CourierNewBoldItalic.h>
+#include <fonts/font_CourierNew.h>
+#include <fonts/font_CourierNewItalic.h>
 
 Display::Display(uint16_t *data1, uint16_t *data2, ILI9341_t3n *screen)
     : tft(screen)
@@ -132,17 +138,20 @@ void Display::drawIn(int wave, int start, uint16_t color)
         scaling = vscale2;
     }
 
+    tft->setFont(CourierNew_8);
+    tft->setTextColor(ILI9341_WHITE);
     if (hscale < 99)
     {
         y1 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
         y1 = vertBoundCheck(y1);
         j++;
-        for (int i = 11; i < 312; i += 2)
+        for (int i = 2; i < 352; i += 8)
         {
             y2 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
             y2 = vertBoundCheck(y2);
 
-            tft->drawLine(i, y1, (i + 2), y2, color);
+            tft->setCursor(i, y2 - (y2 % 8));
+            tft->print("h");
 
             y1 = y2;
             j++;
@@ -369,16 +378,47 @@ void Display::displayMode()
 }
 
 void Display::update()
-{
+{   
+    // tft->setFont(CourierNew_12);
+    // tft->setCursor(100, 100);
+    // tft->setTextColor(ILI9341_WHITE);
+    // tft->print("The top ten saddest anime deaths, in order of tears shed:");
+
+    tft->fillScreen(ILI9341_BLUE);
+    tft->setTextColor(ILI9341_WHITE);
+    //tft->print("XAXAXAXAXATETETETETEUIUIUIUIUIBBBBB!@#$%123459");
+    //tft->setCursor(8, 8);
+
+    // for(int row = 0; row < 30; row++){
+    //     tft->setCursor(0, 8 * row);
+    //      char text[2] = {'0' + row, '\0'};
+    //     for(auto _ = 45; _--;) {
+            
+    //          tft->print(text);
+    //          text[0]++;
+    //     }
+    // }
+    // for(int row = 0; row < 30; row++){
+    //     for(int col = 0; col < 45; col++) {
+    //         tft->setCursor(2 + col * 8, row * 8);
+    //         if(data[0][(int)((col / 45.0) * BUFFER_SIZE)] >) {
+    //             tft->print("h");
+    //         }
+    //     }
+    // }
+
+
+
     // int start = midTrigger();
     int start = newTrigger();
-    tft->fillScreen(ILI9341_BLACK);
-    drawGrid();
+    
+    
     drawIn(0, start, CL(224, 204, 27));
-    drawIn(1, start, CL(52, 214, 201));
-    drawTrigger();
-    displayData();
-    displayMode();
-    // delay(1);
+    // drawIn(1, start, CL(52, 214, 201));
+    // drawTrigger();
+    // displayData();
+    // displayMode();
+    // // delay(1);
+    // 
     tft->updateScreen();
 }
