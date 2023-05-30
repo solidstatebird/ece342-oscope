@@ -1,6 +1,6 @@
 #include <display.h>
 
-Display::Display(uint16_t *data1, uint16_t *data2, ILI9341_t3n *screen)
+Display::Display(int16_t *data1, int16_t *data2, ILI9341_t3n *screen)
     : tft(screen)
 {
     data[0] = data1;
@@ -15,8 +15,13 @@ Display::Display(uint16_t *data1, uint16_t *data2, ILI9341_t3n *screen)
 
 int Display::newTrigger()
 {
-    int scaling, start, prevPoint;
-    int trig = ((trigger / 50.0) * 32767.0) + 32767;
+    int scaling, start;
+    
+    // calculates vertical position of trigger. Lower value is higher on screen
+    int trig = 108.0 - (((trigger - 30) / 30.0) * 104.0);
+
+    // "step" calculates number of samples per pixel horizontally in wave display 
+    double step = (Hdiv[hscale] * SAMPLE_RATE / 38.0);
 
     if (triggerChannel == 0)
     {
@@ -27,30 +32,38 @@ int Display::newTrigger()
         scaling = vscale2;
     }
 
-    if (hscale < 99)
+    if (step >= 0.5)
     {
-        start = ((100 - hscale) * 151);
+        // ensures there are enough samples to fill screen
+        start = 304.0 * step;
         trigPoint = start;
     }
     else
     {
-        start = 76;
+        // ensures there are enough samples to fill screen
+        start = 80;
         trigPoint = start;
     }
-    prevPoint = trigPoint - 1;
+  
     /*
-    while ((((data[triggerChannel][trigPoint] - 32767.0) * scaling) + 32767.0) < trig && trigPoint < 31000)
+    // increases trigPoint counter until a sample is reached that crosses trigger threshold
+    // checks for samples ahead and behind for better stability
+    while (!(((108.0 - (104.0 * (data[triggerChannel][trigPoint + 4] / (1000.0 * 4.0 * Vdiv[scaling])))) <= trig) &&
+            ((108.0 - (104.0 * (data[triggerChannel][trigPoint] / (1000.0 * 4.0 * Vdiv[scaling])))) <= trig) && 
+            ((108.0 - (104.0 * (data[triggerChannel][trigPoint - 2] / (1000.0 * 4.0 * Vdiv[scaling])))) > trig) &&
+            ((108.0 - (104.0 * (data[triggerChannel][trigPoint - 4] / (1000.0 * 4.0 * Vdiv[scaling])))) > trig)) && 
+            !(trigPoint > 31000)) 
     {
         trigPoint++;
-        prevPoint++;
     }
     */
-    while (!(((((data[triggerChannel][trigPoint] - 32767.0) * scaling) + 32767.0) > trig) &&
-             ((((data[triggerChannel][prevPoint] - 32767.0) * scaling) + 32767.0) < trig)) &&
-           !(trigPoint > 31000))
+
+    // multiply Vdiv * 4 to match amplitude for 50 ohm termination
+    while (!(((108.0 + (104.0 * (data[triggerChannel][trigPoint] / (1000.0 * Vdiv[scaling])))) <= trig) && 
+            ((108.0 + (104.0 * (data[triggerChannel][trigPoint - 4] / (1000.0 * Vdiv[scaling])))) > trig)) && 
+            !(trigPoint > 31000)) 
     {
         trigPoint++;
-        prevPoint++;
     }
 
     if (trigPoint < 30000)
@@ -59,49 +72,8 @@ int Display::newTrigger()
     }
     else
     {
+        // returns starting point if trigger threshold not crossed
         return start;
-    }
-}
-
-int Display::midTrigger()
-{
-    int trig = ((trigger / 50.0) * 32767.0) + 32767;
-    if (hscale < 99)
-    {
-        trigPoint1 = ((100 - hscale) * 151);
-    }
-    else
-    {
-        trigPoint1 = 76;
-    }
-    trigPoint2 = trigPoint1;
-    while ((((data[0][trigPoint1] - 32767.0) * vscale1) + 32767.0) < trig && trigPoint1 < 31000)
-    {
-        trigPoint1++;
-    }
-    while ((((data[1][trigPoint2] - 32767.0) * vscale2) + 32767.0) < trig && trigPoint2 < 31000)
-    {
-        trigPoint2++;
-    }
-    if (trigPoint1 > trigPoint2 && trigPoint1 < 30000)
-    {
-        return trigPoint1;
-    }
-    else if (trigPoint2 > trigPoint1 && trigPoint2 < 30000)
-    {
-        return trigPoint2;
-    }
-    else if (trigPoint1 < 30000)
-    {
-        return trigPoint1;
-    }
-    else if (trigPoint2 < 30000)
-    {
-        return trigPoint2;
-    }
-    else
-    {
-        return 32000;
     }
 }
 
@@ -118,12 +90,18 @@ int Display::vertBoundCheck(int vertin)
     return vertin;
 }
 
-void Display::drawIn(int wave, int start, uint16_t color)
+// draws waves with trigger point locked to y-axis
+// j = 0 at trigger point, negative values for left half of screen, positive for right
+void Display::drawInmV(int channel, int start, uint16_t color)
 {
-    int y1, y2, scaling;
-    int j = -76;
+    int y1, y2, scaling, sample;
+    int j = -152;       // number of pixels to the left of center trigger sample
 
-    if (wave == 0)
+    // "step" calculates number of samples per pixel horizontally in wave display 
+    // (sec/quarter / pixels/quarter) * samples/sec = samples/pixel
+    double step = ((Hdiv[hscale] / 38.0) * SAMPLE_RATE);
+
+    if (channel == 0)
     {
         scaling = vscale1;
     }
@@ -132,34 +110,53 @@ void Display::drawIn(int wave, int start, uint16_t color)
         scaling = vscale2;
     }
 
-    if (hscale < 99)
+    // x value of line endpoints must be at least 2 pixels apart
+    // step >= 0.5 ensures at least one sample every 2 pixels
+    if (step >= 0.5)
     {
-        y1 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
+        sample = round(start + (j * step));
+        
+        // voltage magnitude matches oscilloscope with 50 ohm terminaltion
+        // remove /4 to match 1 MOhm magnitude?
+        // multiply Vdiv * 4 to match amplitude for 50 ohm termination
+        y1 = (108 + (104.0 * (data[channel][sample] / (1000.0 * Vdiv[scaling]))));
         y1 = vertBoundCheck(y1);
-        j++;
+        j+=2;
         for (int i = 11; i < 312; i += 2)
         {
-            y2 = (108 - (104.0 * (((data[wave][start + (j * (100 - hscale))] - 32767.0) * scaling) / 32767.0)));
+            sample = round(start + (j * step));
+            if (sample > 31999)
+            {
+                return;         // stops drawing wave if no samples left in array
+            }
+            y2 = (108 + (104.0 * (data[channel][sample] / (1000.0 * Vdiv[scaling]))));
             y2 = vertBoundCheck(y2);
 
             tft->drawLine(i, y1, (i + 2), y2, color);
 
             y1 = y2;
-            j++;
+            j+=2;
         }
     }
-    else
+    else        // less than 1 sample every two pixels, starts spreading out adjacent samples
     {
-        j = (-151 / (hscale - 97));
-        y1 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * scaling) / 32767.0)));
+        j = round(Hdiv[hscale] * SAMPLE_RATE * -4);
+        // voltage magnitude matches oscilloscope with 50 ohm terminaltion
+        // remove /4 to match 1 MOhm magnitude?
+        // multiply Vdiv * 4 to match amplitude for 50 ohm termination
+        y1 = (108 + (104.0 * (data[channel][start + j] / (1000.0 * Vdiv[scaling]))));
         y1 = vertBoundCheck(y1);
         j++;
-        for (int i = 11; i < (411 - hscale); i += (hscale - 97))
+        for (float i = 11; i < 312; i += (1.0 / step))
         {
-            y2 = (108 - (104.0 * (((data[wave][start + j] - 32767.0) * scaling) / 32767.0)));
+             if ((start + j) > 31999)
+            {
+                return;         // stops drawing wave if no samples left in array
+            }
+            y2 = (108 + (104.0 * (data[channel][start + j] / (1000.0 * Vdiv[scaling]))));
             y2 = vertBoundCheck(y2);
 
-            tft->drawLine(i, y1, (i + (hscale - 97)), y2, color);
+            tft->drawLine(i, y1, round(i + (1.0 / step)), y2, color);
 
             y1 = y2;
             j++;
@@ -167,10 +164,11 @@ void Display::drawIn(int wave, int start, uint16_t color)
     }
 }
 
+// draws trigger triangle on left side of display window, triangle filled if adjusting trigger value
 void Display::drawTrigger()
 {
-    int trig = ((trigger / 50.0) * 32767.0) + 32767;
-    int trigPointer = (211 - (206 * trig / 65535.0));
+    int trig = (((trigger - 30) / 30.0) * 104.0) + 104;
+    int trigPointer = (212 - trig);
     if (mode == 5)
     {
         tft->fillTriangle(2, (trigPointer + 6), 2, (trigPointer - 6), 8, trigPointer, ILI9341_WHITE);
@@ -181,6 +179,7 @@ void Display::drawTrigger()
     }
 }
 
+// draws gridlines for wave display window
 void Display::drawGrid()
 {
     // horizontal lines
@@ -207,49 +206,38 @@ void Display::drawGrid()
     tft->drawFastVLine(314, 4, 208, ILI9341_WHITE);
 }
 
-double Display::calculateHscale()
+// Displays time interval between vertical grid lines
+void Display::displayHscale()
 {
-    double hdiv;
-    if (hscale < 99)
-    {
-        hdiv = (((100.0 - hscale) / SAMPLE_RATE) * 19.0);
-    }
-    else
-    {
-        hdiv = ((1.0 / SAMPLE_RATE) * ((hscale - 97) / 19.0));
-    }
-    return hdiv;
-}
+    int scaling = hscale;
 
-void Display::displayHscale(double hdiv)
-{
     tft->setFont(Arial_9);
     tft->setCursor(199, 222);
     tft->setTextColor(ILI9341_WHITE);
     tft->print("Time: ");
-    if (hdiv >= 1)
+    if (Hdiv[hscale] >= 1)
     {
-        tft->print(hdiv, 1);
+        tft->print(Hdiv[hscale], 0);
         tft->print(" s");
     }
-    else if (hdiv < 1 && hdiv >= 0.001)
+    else if (Hdiv[hscale] < 1 && Hdiv[hscale] >= 0.001)
     {
-        tft->print((hdiv * 1000.0), 1);
+        tft->print((Hdiv[hscale] * 1000.0), 0);
         tft->print(" ms");
     }
-    else if (hdiv < 0.001 && hdiv >= 0.000001)
+    else if (Hdiv[hscale] < 0.001 && Hdiv[hscale] >= 0.000001)
     {
-        tft->print((hdiv * 1000000.0), 1);
+        tft->print((Hdiv[hscale] * 1000000.0), 0);
         tft->print(" us");
     }
-    else if (hdiv < 0.000001 && hdiv >= 0.000000001)
+    else if (Hdiv[hscale] < 0.000001 && Hdiv[hscale] >= 0.000000001)
     {
-        tft->print((hdiv * 1000000000.0), 1);
+        tft->print((Hdiv[hscale] * 1000000000.0), 0);
         tft->print(" ns");
     }
     else
     {
-        tft->print((hdiv * 1000000000000.0), 1);
+        tft->print((Hdiv[hscale] * 1000000000000.0), 0);
         tft->print(" ps");
     }
 }
@@ -302,25 +290,24 @@ void Display::displayTrigChannel()
     }
 }
 
+// Displays user interface data on bottom of screen and vertical scaling
+// Calls functions to display horizontal scaling, run/stop, and trigger channel
 void Display::displayData()
 {
-    float div1 = 1.5 / vscale1;
-    float div2 = 1.5 / vscale2;
-    double hdiv = calculateHscale();
     tft->setFont(Arial_9);
 
     tft->setCursor(33, 222);
     tft->setTextColor(CL(224, 204, 27));
     tft->print("CH1: ");
 
-    if (div1 > 1)
+    if (Vdiv[vscale1] >= 1)
     {
-        tft->print(div1, 2);
+        tft->print(Vdiv[vscale1], 2);
         tft->print(" V");
     }
     else
     {
-        tft->print((div1 * 1000), 0);
+        tft->print((Vdiv[vscale1] * 1000), 0);
         tft->print(" mV");
     }
 
@@ -328,19 +315,19 @@ void Display::displayData()
     tft->setTextColor(CL(52, 214, 201));
     tft->print("CH2: ");
 
-    if (div2 > 1)
+    if (Vdiv[vscale2] >= 1)
     {
-        tft->print(div2, 2);
+        tft->print(Vdiv[vscale2], 2);
         tft->print(" V");
     }
     else
     {
-        tft->print((div2 * 1000), 0);
+        tft->print((Vdiv[vscale2] * 1000), 0);
         tft->print(" mV");
     }
 
     displayTrigChannel();
-    displayHscale(hdiv);
+    displayHscale();
     displayRunStop();
 }
 
@@ -372,10 +359,13 @@ void Display::update()
 {
     // int start = midTrigger();
     int start = newTrigger();
+    //Serial.println(" Received trigger start ");
     tft->fillScreen(ILI9341_BLACK);
     drawGrid();
-    drawIn(0, start, CL(224, 204, 27));
-    drawIn(1, start, CL(52, 214, 201));
+    //drawIn(0, start, CL(224, 204, 27));
+    //drawIn(1, start, CL(52, 214, 201));
+    drawInmV(0, start, CL(224, 204, 27));
+    drawInmV(1, start, CL(52, 214, 201));
     drawTrigger();
     displayData();
     displayMode();

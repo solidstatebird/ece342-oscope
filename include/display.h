@@ -17,32 +17,33 @@
 class Display
 {
 public:
-    Display(uint16_t *, uint16_t *, ILI9341_t3n *);
+    Display(int16_t *, int16_t *, ILI9341_t3n *);
     void update();
 
     uint16_t mode = 1;           // mode: 1 - 6
-    uint16_t vscale1 = 1;        // Mode 1: 1 - 20
-    uint16_t vscale2 = 1;        // Mode 2: 1 - 20
-    uint16_t hscale = 75;        // Mode 3: 1 - 150
+    uint16_t vscale1 = 1;        // Mode 1: 0 - 10
+    uint16_t vscale2 = 1;        // Mode 2: 0 - 10
+    uint16_t hscale = 5;        // Mode 3: 0 - 13
     uint16_t runStop = 0;        // Mode 4: 0 - 1
     uint16_t triggerChannel = 0; // Mode 5: 0 - 1
-    uint16_t trigger = 10;       // Mode 6: 1 - 50
+    uint16_t trigger = 30;       // Mode 6: 0 - 30
+
+    double Vdiv [11] = {2.0, 1.0, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001};
+    double Hdiv [14] = {0.002, 0.001, 0.0005, 0.0002, 0.0001, 0.00005, 0.00002, 0.00001, 0.000005, 0.000002, 0.000001, 0.0000005, 0.0000002, 0.0000001};
 
 private:
     int newTrigger();
-    int midTrigger();
     int vertBoundCheck(int vertin);
-    void drawIn(int, int, uint16_t);
+    void drawInmV(int, int, uint16_t);
     void drawTrigger();
     void drawGrid();
-    double calculateHscale();
-    void displayHscale(double hdiv);
+    void displayHscale();
     void displayRunStop();
     void displayTrigChannel();
     void displayData();
     void displayMode();
 
-    uint16_t *data[2];
+    int16_t *data[2];
 
     uint16_t trigPoint = 0;
     uint16_t trigPoint1 = 0;

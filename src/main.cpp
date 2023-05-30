@@ -39,18 +39,22 @@ void modeChange()
     knob_in.modeChange(display);
 }
 
+int16_t testarray[BUFFER_SIZE];
+int16_t testarray2[BUFFER_SIZE];   
+
 void setup()
 {
     while (!Serial && millis() < 5000)
         ; // Wait 5 seconds for serial connection
-    display = new Display(screen_channel_1_data, screen_channel_2_data, &tft);
+   
+    display = new Display(channel_1_data, channel_2_data, &tft);
 
     setupADC(channel_1_pin, channel_2_pin);
 
     pinMode(knob_in_1, INPUT_PULLUP);
     pinMode(knob_in_2, INPUT_PULLUP);
     pinMode(knob_push, INPUT_PULLUP);
-    // attachInterrupt(digitalPinToInterrupt(knob_push), modeChange, FALLING);
+
     attachInterrupt(digitalPinToInterrupt(knob_in_2), rotate, CHANGE);
 
     knob_in.oldPosition = knob.read();
@@ -59,20 +63,26 @@ void setup()
 
 void loop()
 {
+    
     if (DMA_completed())
     {
-        processBuffers(channel_1_data, channel_2_data);
+        if (display->runStop == 0) 
+        {
+            processBuffers(channel_1_data, channel_2_data);
+        }
 
         // temporary: convert from mV to full 16 bit range (6V = )
+        
         for (int i = 0; i < BUFFER_SIZE; i++)
         {
             screen_channel_1_data[i] = channel_1_data[i] * 5.46133333333 + 32767.0;
             screen_channel_2_data[i] = channel_2_data[i] * 5.46133333333 + 32767.0;
         }
+        
 
         display->update();
     }
-
+    
     currentButtonState = digitalRead(knob_push);
 
     if (currentButtonState != lastButtonState)

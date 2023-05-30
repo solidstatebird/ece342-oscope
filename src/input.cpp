@@ -15,9 +15,6 @@ int KnobIn::knobRange(int position, int min, int max)
 
 void KnobIn::rotate(Display *display, Encoder knob)
 {
-    // newPosition = knob.read();
-    // int diff = abs(newPosition - oldPosition) / 4;
-
     newPosition = knob.read() / 4;
     int diff = abs(newPosition - oldPosition);
 
@@ -29,15 +26,15 @@ void KnobIn::rotate(Display *display, Encoder knob)
     {
         if (display->mode == 1)
         {
-            display->vscale1 = knobRange(display->vscale1 + diff, 1, 20);
+            display->vscale1 = knobRange(display->vscale1 + diff, 0, 10);
         }
         else if (display->mode == 2)
         {
-            display->vscale2 = knobRange(display->vscale2 + diff, 1, 20);
+            display->vscale2 = knobRange(display->vscale2 + diff, 0, 10);
         }
         else if (display->mode == 3)
         {
-            display->hscale = knobRange(display->hscale + diff, 1, 150);
+            display->hscale = knobRange(display->hscale + diff, 0, 13);
         }
         else if (display->mode == 4)
         {
@@ -45,7 +42,7 @@ void KnobIn::rotate(Display *display, Encoder knob)
         }
         else if (display->mode == 5)
         {
-            display->trigger = knobRange(display->trigger + diff, 1, 50);
+            display->trigger = knobRange(display->trigger + diff, 0, 60);
         }
         else if (display->mode == 6)
         {
